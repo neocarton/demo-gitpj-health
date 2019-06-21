@@ -36,6 +36,5 @@ public interface GitHubClient {
 	 */
 	@RequestMapping(method = RequestMethod.GET, path = "/repos/{owner}/{repo}/stats/commit_activity",
 			headers = {"Authorization=token ${app.github.access_token}", "Accept=application/vnd.github.v3+json"})
-	List<GitCommitStat> getCommitStatistics(@PathVariable("owner") String owner, @PathVariable("repo") String repo,
-											@RequestParam(name = "page", required = false) Integer page);
+	List<GitCommitStat> getCommitStatistics(@PathVariable("owner") String owner, @PathVariable("repo") String repo);
 }

@@ -1,9 +1,6 @@
 package me.lam.huyen.service;
 
-import me.lam.huyen.model.Data;
-import me.lam.huyen.model.GitProject;
-import me.lam.huyen.model.GitProjectList;
-import me.lam.huyen.model.GitUser;
+import me.lam.huyen.model.*;
 import me.lam.huyen.repository.DataRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +20,8 @@ import java.util.stream.Collectors;
 @Service
 public class DataService {
 
+	private static final int MAX_WEEK_COUNTS = 53;
+
 	private Logger logger = LoggerFactory.getLogger(DataService.class);
 
 	@Autowired
@@ -32,7 +31,7 @@ public class DataService {
 	private StateService stateService;
 
 	@Transactional
-	public void save(GitProjectList projectList) {
+	public void saveProjects(GitProjectList projectList) {
 		List<GitProject> projects = projectList.getItems();
 		if (projects == null || projects.isEmpty()) {
 			return;
@@ -40,13 +39,13 @@ public class DataService {
 		int page = projectList.getPage();
 		logger.debug("Saving '{}' git projects loaded from page '{}'", projects.size(), page);
 		for (GitProject project : projects) {
-			save(project);
+			saveProject(project);
 		}
 		stateService.save(page, projects.size());
 		logger.debug("Successfully saved '{}' git projects loaded from page '{}'", projects.size(), page);
 	}
 
-	private void save(GitProject project) {
+	private void saveProject(GitProject project) {
 		String id = project.getId();
 		Map<String, String> properties = new LinkedHashMap<>();
 		properties.put("name", project.getName());
@@ -56,6 +55,28 @@ public class DataService {
 		properties.put("size", Objects.toString(project.getSize(), null));
 		properties.put("forks", Objects.toString(project.getForks(), null));
 		properties.put("stars", Objects.toString(project.getWatchers(), null));
+		List<Data> data = properties.entrySet().stream()
+				.filter(entry -> entry.getValue() != null)
+				.map(entry -> new Data(id, entry.getKey(), entry.getValue()))
+				.collect(Collectors.toList());
+		dataRepository.saveAll(data);
+	}
+
+	@Transactional
+	public void saveCommitStats(Map<String, GitCommitStatWeekly> commitStats) {
+		for (Map.Entry<String, GitCommitStatWeekly> commitStatWeeklyEntry : commitStats.entrySet()) {
+			String id = commitStatWeeklyEntry.getKey();
+			GitCommitStatWeekly commitStatWeekly = commitStatWeeklyEntry.getValue();
+			saveCommitStat(id, commitStatWeekly);
+		}
+	}
+
+	private void saveCommitStat(String id, GitCommitStatWeekly commitStatWeekly) {
+		Map<String, String> properties = new LinkedHashMap<>();
+		properties.put("commit.total", String.valueOf(commitStatWeekly.getTotalCommit()));
+		properties.put("commit.week_count", String.valueOf(commitStatWeekly.getWeekCount()));
+		properties.put("commit.weekly_average", String.valueOf(commitStatWeekly.getAvgCommitPerWeek()));
+		properties.put("commit.daily_average", String.valueOf(commitStatWeekly.getAvgCommitPerDay()));
 		List<Data> data = properties.entrySet().stream()
 				.filter(entry -> entry.getValue() != null)
 				.map(entry -> new Data(id, entry.getKey(), entry.getValue()))

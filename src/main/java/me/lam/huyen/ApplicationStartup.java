@@ -1,6 +1,7 @@
 package me.lam.huyen;
 
 import me.lam.huyen.channel.ProjectLoader;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,11 @@ public class ApplicationStartup implements ApplicationListener<ApplicationReadyE
 	@Override
 	public void onApplicationEvent(ApplicationReadyEvent event) {
 		logger.debug("Start processing...");
-        projectLoader.loadProjects();
+		try {
+			projectLoader.loadProjects();
+		}
+		catch (Exception exc) {
+			logger.error("Load projects failed, try again later: {}", ExceptionUtils.getRootCauseMessage(exc));
+		}
 	}
 }

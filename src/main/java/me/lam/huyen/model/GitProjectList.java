@@ -2,6 +2,7 @@ package me.lam.huyen.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Collections;
 import java.util.List;
 
 public class GitProjectList {
@@ -11,7 +12,7 @@ public class GitProjectList {
 
 	private Boolean incompleteResults;
 
-	private List<GitProject> items;
+	private List<GitProject> items = Collections.emptyList();
 
 	private Integer page;
 
