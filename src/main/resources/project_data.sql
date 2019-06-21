@@ -1,0 +1,14 @@
+CREATE TABLE IF NOT EXISTS state (
+    id SMALLINT,
+    page INT NOT NULL,
+    loadeds INT NOT NULL DEFAULT 0,
+    PRIMARY KEY(id),
+);
+
+CREATE TABLE IF NOT EXISTS data (
+    id VARCHAR(200) NOT NULL,
+    object_id VARCHAR(100) NOT NULL,
+    key VARCHAR(100) NOT NULL,
+    value VARCHAR(512),
+    PRIMARY KEY(id),
+);
