@@ -1,12 +1,11 @@
 # Getting Started
 
-### Reference Documentation
-For further reference, please consider the following sections:
+### Configuration
+Set valid github Personal Token to src/main/resources/application.properties as follows:
+app.github.access_token=7066ec5c7baf66cdad7057c474ac4cf0e00c0bd1
 
-* [Official Gradle documentation](https://docs.gradle.org)
+### Build
+./make
 
-### Additional Links
-These additional references should also help you:
-
-* [Gradle Build Scans – insights for your project's build](https://scans.gradle.com#gradle)
-
+### Execute
+./run
