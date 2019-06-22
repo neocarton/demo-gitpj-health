@@ -2,7 +2,7 @@ package me.lam.huyen.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.Date;
+import java.sql.Date;
 import java.util.List;
 import java.util.Objects;
 
@@ -149,11 +149,11 @@ public class GitIssue {
 		this.pullRequest = pullRequest;
 	}
 
-	// ms
+	// second
 	public long getOpenTime() {
 		long createdTime = (createdAt != null) ? createdAt.getTime() : 0;
-		long closeTime = (closedAt != null) ? closedAt.getTime() : 0;
-		return closeTime - createdTime;
+		long closeTime = (closedAt != null) ? closedAt.getTime() : System.currentTimeMillis();
+		return (closeTime - createdTime) / 1000;
 	}
 
 	@Override
@@ -171,7 +171,7 @@ public class GitIssue {
 
 	@Override
 	public String toString() {
-		return "GitIssue{" +
+		return this.getClass().getSimpleName() + "{" +
 				"id='" + id + '\'' +
 				", nodeId='" + nodeId + '\'' +
 				", url='" + url + '\'' +

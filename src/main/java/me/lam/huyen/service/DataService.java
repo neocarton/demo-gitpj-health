@@ -31,6 +31,18 @@ public class DataService {
     @Autowired
     private StateService stateService;
 
+	public List<Data> findProjectsHaveNoCommit(int limit) {
+		return dataRepository.findProjectsWithNoKey("commit.count", limit);
+	}
+
+	public List<Data> findProjectsHaveNoIssue(int limit) {
+		return dataRepository.findProjectsWithNoKey("issue.count", limit);
+	}
+
+	public List<Data> findProjectsHaveNoPullRequest(int limit) {
+		return dataRepository.findProjectsWithNoKey("pull_request.count", limit);
+	}
+
 	@Transactional
 	public void saveProjects(List<GitProject> projects, State state) {
 		for (GitProject project : projects) {
@@ -40,7 +52,6 @@ public class DataService {
 	}
 
 	private void saveProject(GitProject project) {
-		String id = project.getId();
 		Map<String, String> properties = new LinkedHashMap<>();
 		properties.put("name", project.getName());
 		properties.put("full_name", project.getFullName());
@@ -50,6 +61,7 @@ public class DataService {
 		properties.put("size", Objects.toString(project.getSize(), null));
 		properties.put("forks", Objects.toString(project.getForks(), null));
 		properties.put("stars", Objects.toString(project.getWatchers(), null));
+		String id = project.getId();
 		save(id, properties);
 	}
 
@@ -59,14 +71,6 @@ public class DataService {
 				.map(entry -> new Data(id, entry.getKey(), entry.getValue()))
 				.collect(Collectors.toList());
 		dataRepository.saveAll(data);
-	}
-
-	public List<Data> findProjectsHaveNoCommit(int limit) {
-		return dataRepository.findProjectsWithNoKey("commit.count", limit);
-	}
-
-	public List<Data> findProjectsHaveNoIssue(int limit) {
-		return dataRepository.findProjectsWithNoKey("issue.count", limit);
 	}
 
 	@Transactional
@@ -95,11 +99,11 @@ public class DataService {
 		Map<String, String> properties = new LinkedHashMap<>();
 		int issueCount = topIssues.getIssueCount();
 		properties.put("issue.count", Objects.toString(issueCount));
+		properties.put("issue.count.open", Objects.toString(topIssues.getOpenIssueCount()));
+		properties.put("issue.count.close", Objects.toString(topIssues.getCloseIssueCount()));
 		if (issueCount > 0) {
-			properties.put("issue.count.open", Objects.toString(topIssues.getOpenIssueCount()));
-			properties.put("issue.count.close", Objects.toString(topIssues.getCloseIssueCount()));
-			properties.put("issue.total_open_time", Objects.toString(topIssues.getTotalOpenTime()));
-			properties.put("issue.avg_open_time", Objects.toString(topIssues.getAvgOpenTime()));
+			properties.put("issue.total_open_time_s", Objects.toString(topIssues.getTotalOpenTime()));
+			properties.put("issue.avg_open_time_s", Objects.toString(topIssues.getAvgOpenTime()));
 			Float openRatio = topIssues.getOpenRatio();
 			Float closeRatio = topIssues.getCloseRatio();
 			properties.put("issue.open_ratio", Objects.toString(openRatio, null));
@@ -116,6 +120,21 @@ public class DataService {
 	public void saveIssuesError(String id, Exception error) {
 		Map<String, String> properties = new LinkedHashMap<>();
 		properties.put("issue.last_error", ExceptionUtils.getStackTrace(error));
+		save(id, properties);
+	}
+
+	@Transactional
+	public void savePullRequests(String id, GitTopIssues<?> topIssues) {
+		Map<String, String> properties = new LinkedHashMap<>();
+		int issueCount = topIssues.getIssueCount();
+		properties.put("pull_request.count", Objects.toString(issueCount));
+		properties.put("pull_request.count.open", Objects.toString(topIssues.getOpenIssueCount()));
+		if (issueCount > 0) {
+			properties.put("pull_request.total_open_time_s", Objects.toString(topIssues.getTotalOpenTime()));
+			properties.put("pull_request.avg_merge_time_s", Objects.toString(topIssues.getAvgOpenTime()));
+			properties.put("pull_request.comments", Objects.toString(topIssues.getTotalComments()));
+			properties.put("pull_request.avg_comments", Objects.toString(topIssues.getAvgComments()));
+		}
 		save(id, properties);
 	}
 }

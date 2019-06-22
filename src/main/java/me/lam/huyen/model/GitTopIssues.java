@@ -2,22 +2,24 @@ package me.lam.huyen.model;
 
 import java.util.List;
 
-public class GitTopIssues {
+public class GitTopIssues<T extends GitIssue> {
 
-	private List<GitIssue> items;
+	private List<T> items;
 
 	private int issueCount = 0;
 
-	private long totalOpenTime = 0; // ms
+	private long totalOpenTime = 0; // second
 
 	private int openIssueCount = 0;
 
 	private int closeIssueCount = 0;
 
+	private long totalComments = 0;
+
 	public GitTopIssues() {
 	}
 
-	public GitTopIssues(List<GitIssue> items) {
+	public GitTopIssues(List<T> items) {
 		this.items = items;
 		init();
 	}
@@ -32,14 +34,15 @@ public class GitTopIssues {
 			boolean open = "open".equals(item.getState());
 			openIssueCount += (open) ? 1 : 0;
 			closeIssueCount += (!open) ? 1 : 0;
+			totalComments += item.getComments();
 		}
 	}
 
-	public List<GitIssue> getItems() {
+	public List<T> getItems() {
 		return items;
 	}
 
-	public void setItems(List<GitIssue> items) {
+	public void setItems(List<T> items) {
 		this.items = items;
 	}
 
@@ -51,6 +54,7 @@ public class GitTopIssues {
 		this.issueCount = issueCount;
 	}
 
+	// seconds
 	public long getTotalOpenTime() {
 		return totalOpenTime;
 	}
@@ -75,8 +79,17 @@ public class GitTopIssues {
 		this.closeIssueCount = closeIssueCount;
 	}
 
-	public Float getAvgOpenTime() {
-		return (issueCount != 0) ? ((float) totalOpenTime / issueCount) : null;
+	public long getTotalComments() {
+		return totalComments;
+	}
+
+	public void setTotalComments(long totalComments) {
+		this.totalComments = totalComments;
+	}
+
+	// seconds
+	public Long getAvgOpenTime() {
+		return (issueCount != 0) ? (totalOpenTime / issueCount) : null;
 	}
 
 	public Float getOpenRatio() {
@@ -85,6 +98,10 @@ public class GitTopIssues {
 
 	public Float getCloseRatio() {
 		return (issueCount != 0) ? ((float) closeIssueCount / issueCount) : null;
+	}
+
+	public Float getAvgComments() {
+		return (issueCount != 0) ? ((float) totalComments / issueCount) : null;
 	}
 
 	@Override
@@ -98,6 +115,7 @@ public class GitTopIssues {
 				", avgOpenTime=" + getAvgOpenTime() +
 				", openRatio=" + getOpenRatio() +
 				", closeRatio=" + getCloseRatio() +
+				", avgComments=" + getAvgComments() +
 				'}';
 	}
 }

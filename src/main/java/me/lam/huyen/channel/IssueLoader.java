@@ -64,7 +64,7 @@ public class IssueLoader {
 		while (issues.size() < maxResult) {
 			String repos = project.getValue();
 			// Load commit statistics
-			List<GitIssue> curIssues = gitHubService.getIssues(repos, "created_at", "desc", page++, pageSize); // Get top 100 issues for evaluation
+			List<GitIssue> curIssues = gitHubService.getIssues(repos, "created", "desc", page++, pageSize);
 			if (curIssues == null || curIssues.isEmpty()) {
 				break;
 			}
@@ -76,7 +76,7 @@ public class IssueLoader {
 			}
 		}
 		// Save data and state
-		GitTopIssues topIssues = new GitTopIssues(issues);
+		GitTopIssues<GitIssue> topIssues = new GitTopIssues<>(issues);
 		dataService.saveIssues(id, topIssues);
 	}
 }
