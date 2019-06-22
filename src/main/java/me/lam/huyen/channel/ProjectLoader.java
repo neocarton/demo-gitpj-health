@@ -1,10 +1,10 @@
 package me.lam.huyen.channel;
 
+import me.lam.huyen.client.GitHubClient;
 import me.lam.huyen.config.ApplicationConfiguration;
 import me.lam.huyen.model.GitProject;
 import me.lam.huyen.model.GitProjectList;
 import me.lam.huyen.model.State;
-import me.lam.huyen.service.GitProjectService;
 import me.lam.huyen.service.StateService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,15 +22,15 @@ public class ProjectLoader {
 	private ApplicationConfiguration config;
 
 	@Autowired
-	private StateService stateService;
+	private GitHubClient gitHubClient;
 
 	@Autowired
-	private GitProjectService gitProjectService;
+	private StateService stateService;
 
 	@Autowired
 	private ProjectLoadedGateway projectLoadedGateway;
 
-	public void loadProjects() {
+	public void fetchProjects() {
 		int delay = config.getDelay();
 		int pageSize = config.getPageSize();
 		int maxResult = config.getMaxResult();
@@ -40,7 +40,7 @@ public class ProjectLoader {
 		int proceededCount = state.getLoadedCount();
 		logger.debug("Start to fetch git projects from page {} and page-size {}", page, pageSize);
 		while (proceededCount < maxResult) {
-			int loadedCount = loadProjectsAndPassOn(page, pageSize);
+			int loadedCount = fetchProjectsAndPassOn(page, pageSize);
 			if (loadedCount == 0) {
 				break;
 			}
@@ -51,16 +51,18 @@ public class ProjectLoader {
 		};
 	}
 
-	public int loadProjectsAndPassOn(int page, int pageSize) {
+	public int fetchProjectsAndPassOn(int page, int pageSize) {
 		// Load repositories
-		GitProjectList projectList = gitProjectService.fetchTopProjects(page, pageSize);
-		List<GitProject> projects = projectList.getItems();
+		logger.debug("Get git projects from github.com at page {} with page-size {}", page, pageSize);
+		GitProjectList result = gitHubClient.searchRepositories("language:javascript", "stars", "desc", page, pageSize);
+		List<GitProject> projects = result.getItems();
 		if (projects == null || projects.isEmpty()) {
 			return 0;
 		}
+		logger.debug("Got {} projects from github.com", projects.size());
 		// Push repositories to data pipeline
-		projectList.setPage(page);
-		projectLoadedGateway.send(projectList);
+		result.setPage(page);
+		projectLoadedGateway.send(result);
 		return projects.size();
 	}
 

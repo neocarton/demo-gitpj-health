@@ -21,7 +21,7 @@ public class ApplicationStartup implements ApplicationListener<ApplicationReadyE
 	public void onApplicationEvent(ApplicationReadyEvent event) {
 		logger.debug("Start processing...");
 		try {
-			projectLoader.loadProjects();
+			projectLoader.fetchProjects();
 		}
 		catch (Exception exc) {
 			logger.error("Load projects failed, try again later: {}", ExceptionUtils.getRootCauseMessage(exc));
