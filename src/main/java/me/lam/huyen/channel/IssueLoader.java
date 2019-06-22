@@ -59,10 +59,10 @@ public class IssueLoader {
 
 	private void fetchIssuesAndSave(Data project) {
 		String id = project.getObjectId();
+		String repos = project.getValue();
 		int page = 1;
 		List<GitIssue> issues = new ArrayList<>(maxResult);
 		while (issues.size() < maxResult) {
-			String repos = project.getValue();
 			// Load commit statistics
 			List<GitIssue> curIssues = gitHubService.getIssues(repos, "created", "desc", page++, pageSize);
 			if (curIssues == null || curIssues.isEmpty()) {

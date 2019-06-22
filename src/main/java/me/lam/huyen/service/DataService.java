@@ -43,6 +43,10 @@ public class DataService {
 		return dataRepository.findProjectsWithNoKey("pull_request.count", limit);
 	}
 
+	public List<Data> findProjectsHaveNoContributor(int limit) {
+		return dataRepository.findProjectsWithNoKey("contributor.count", limit);
+	}
+
 	@Transactional
 	public void saveProjects(List<GitProject> projects, State state) {
 		for (GitProject project : projects) {
@@ -134,6 +138,18 @@ public class DataService {
 			properties.put("pull_request.avg_merge_time_s", Objects.toString(topIssues.getAvgOpenTime()));
 			properties.put("pull_request.comments", Objects.toString(topIssues.getTotalComments()));
 			properties.put("pull_request.avg_comments", Objects.toString(topIssues.getAvgComments()));
+		}
+		save(id, properties);
+	}
+
+	@Transactional
+	public void saveContributorStats(String id, GitContributorStatList contributorStatList) {
+		Map<String, String> properties = new LinkedHashMap<>();
+		int contributorCount = contributorStatList.getTotalContributors();
+		properties.put("contributor.count", Objects.toString(contributorCount));
+		properties.put("contributor.total_commits", Objects.toString(contributorStatList.getTotalCommits()));
+		if (contributorCount > 0) {
+			properties.put("contributor.avg_commits", Objects.toString(contributorStatList.getAvgCommits()));
 		}
 		save(id, properties);
 	}

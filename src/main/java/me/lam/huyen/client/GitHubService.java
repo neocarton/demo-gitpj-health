@@ -1,9 +1,6 @@
 package me.lam.huyen.client;
 
-import me.lam.huyen.model.GitCommitStat;
-import me.lam.huyen.model.GitIssue;
-import me.lam.huyen.model.GitProjectList;
-import me.lam.huyen.model.GitPullRequest;
+import me.lam.huyen.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -61,6 +58,16 @@ public class GitHubService implements GitHubClient {
 	public List<GitPullRequest> getPullRequests(String repo, String sort, String order, Integer page, Integer pageSize) {
 		try {
 			return gitHubClient.getPullRequests(repo, sort, order, page, pageSize);
+		}
+		catch (Exception exc) {
+			return Collections.emptyList();
+		}
+	}
+
+	@Override
+	public List<GitContributorStat> getContributorStatistics(String repo) {
+		try {
+			return gitHubClient.getContributorStatistics(repo);
 		}
 		catch (Exception exc) {
 			return Collections.emptyList();

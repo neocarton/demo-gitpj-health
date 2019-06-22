@@ -59,10 +59,10 @@ public class PullRequestLoader {
 
 	private void fetchPullRequestsAndSave(Data project) {
 		String id = project.getObjectId();
+		String repos = project.getValue();
 		int page = 1;
 		List<GitPullRequest> pullRequests = new ArrayList<>(maxResult);
 		while (pullRequests.size() < maxResult) {
-			String repos = project.getValue();
 			// Load commit statistics
 			List<GitPullRequest> curPullRequests = gitHubService.getPullRequests(repos, "created", "desc", page++, pageSize);
 			if (curPullRequests == null || curPullRequests.isEmpty()) {

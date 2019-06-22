@@ -1,9 +1,6 @@
 package me.lam.huyen.client;
 
-import me.lam.huyen.model.GitCommitStat;
-import me.lam.huyen.model.GitIssue;
-import me.lam.huyen.model.GitProjectList;
-import me.lam.huyen.model.GitPullRequest;
+import me.lam.huyen.model.*;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -63,4 +60,12 @@ interface GitHubClient {
 										 @RequestParam(name = "order", required = false) String order,
 										 @RequestParam(name = "page", required = false) Integer page,
 										 @RequestParam(name = "per_page", required = false) Integer pageSize);
+
+	/**
+	 * Get repository contributor statistics
+	 * https://developer.github.com/v3/repos/statistics/#get-contributors-list-with-additions-deletions-and-commit-counts
+	 */
+	@RequestMapping(method = RequestMethod.GET, path = "/repos/{repo}/stats/contributors",
+			headers = {"Authorization=token ${app.github.access_token}", "Accept=application/vnd.github.v3+json"})
+	List<GitContributorStat> getContributorStatistics(@PathVariable("repo") String repo);
 }
