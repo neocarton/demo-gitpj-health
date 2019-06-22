@@ -9,9 +9,14 @@ public interface GitProjectChannel {
 
 	String COMMIT_STAT_LOADED = "commitStatLoaded";
 
+	String ISSUE_LOADED = "issueLoaded";
+
 	@Output
 	MessageChannel projectLoaded();
 
 	@Output
 	MessageChannel commitStatLoaded();
+
+	@Output
+	MessageChannel issueLoaded();
 }

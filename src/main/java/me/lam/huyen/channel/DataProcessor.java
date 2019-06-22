@@ -1,6 +1,7 @@
 package me.lam.huyen.channel;
 
 import me.lam.huyen.model.GitCommitStatWeekly;
+import me.lam.huyen.model.GitTopIssues;
 import me.lam.huyen.model.GitProjectList;
 import me.lam.huyen.service.DataService;
 import org.slf4j.Logger;
@@ -22,19 +23,18 @@ public class DataProcessor {
 	@Autowired
 	private DataService dataService;
 
-	/**
-	 * Handle event git projects loaded.
-	 */
 	@StreamListener(GitProjectChannel.PROJECT_LOADED)
 	public void handleProjectLoaded(GitProjectList projectList) {
 		dataService.saveProjects(projectList);
 	}
 
-	/**
-	 * Handle event git projects loaded.
-	 */
 	@StreamListener(GitProjectChannel.COMMIT_STAT_LOADED)
 	public void handleCommitStatLoaded(Map<String, GitCommitStatWeekly> commitStats) {
 		dataService.saveCommitStats(commitStats);
+	}
+
+	@StreamListener(GitProjectChannel.ISSUE_LOADED)
+	public void handleIssueLoaded(Map<String, GitTopIssues> issues) {
+		dataService.saveIssues(issues);
 	}
 }

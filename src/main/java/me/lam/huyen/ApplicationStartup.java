@@ -24,7 +24,8 @@ public class ApplicationStartup implements ApplicationListener<ApplicationReadyE
 			projectLoader.fetchProjects();
 		}
 		catch (Exception exc) {
-			logger.error("Load projects failed, try again later: {}", ExceptionUtils.getRootCauseMessage(exc));
+			logger.error("Load projects failed, try again later: " + ExceptionUtils.getRootCauseMessage(exc), exc);
+			System.exit(1);
 		}
 	}
 }

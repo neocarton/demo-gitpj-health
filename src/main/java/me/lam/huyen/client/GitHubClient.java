@@ -1,6 +1,7 @@
 package me.lam.huyen.client;
 
 import me.lam.huyen.model.GitCommitStat;
+import me.lam.huyen.model.GitIssue;
 import me.lam.huyen.model.GitProjectList;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,4 +38,16 @@ public interface GitHubClient {
 	@RequestMapping(method = RequestMethod.GET, path = "/repos/{owner}/{repo}/stats/commit_activity",
 			headers = {"Authorization=token ${app.github.access_token}", "Accept=application/vnd.github.v3+json"})
 	List<GitCommitStat> getCommitStatistics(@PathVariable("owner") String owner, @PathVariable("repo") String repo);
+
+	/**
+	 * Get repository issues
+	 * https://developer.github.com/v3/issues/#list-issues-for-a-repository
+	 */
+	@RequestMapping(method = RequestMethod.GET, path = "/repos/{owner}/{repo}/issues",
+			headers = {"Authorization=token ${app.github.access_token}", "Accept=application/vnd.github.v3+json"})
+	List<GitIssue> getIssues(@PathVariable("owner") String owner, @PathVariable("repo") String repo,
+							 @RequestParam(name = "sort", required = false) String sort,
+							 @RequestParam(name = "order", required = false) String order,
+							 @RequestParam(name = "page", required = false) Integer page,
+							 @RequestParam(name = "per_page", required = false) Integer pageSize);
 }

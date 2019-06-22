@@ -27,8 +27,6 @@ public class GitCommitStatWeekly {
 		}
 		weekCount = items.size();
 		dayCount = weekCount * 7;
-		totalCommit = items.stream().map(GitCommitStat::getTotal)
-				.reduce(0, (output, weekCommitCount) -> output + weekCommitCount);
 		for (GitCommitStat item : items) {
 			weekCount++;
 			dayCount += item.getDays().size();
@@ -68,12 +66,8 @@ public class GitCommitStatWeekly {
 		this.totalCommit = totalCommit;
 	}
 
-	public int getAvgCommitPerWeek() {
-		return totalCommit / weekCount;
-	}
-
-	public int getAvgCommitPerDay() {
-		return totalCommit / dayCount;
+	public Float getAvgCommitPerDay() {
+		return (dayCount != 0) ? ((float) totalCommit / dayCount) : null;
 	}
 
 	@Override
@@ -83,7 +77,6 @@ public class GitCommitStatWeekly {
 				", dayCount=" + dayCount +
 				", weekCount=" + weekCount +
 				", totalCommit=" + totalCommit +
-				", avgCommitPerWeek=" + getAvgCommitPerWeek() +
 				", avgCommitPerDay=" + getAvgCommitPerDay() +
 				'}';
 	}

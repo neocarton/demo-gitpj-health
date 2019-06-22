@@ -46,7 +46,7 @@ public class ProjectLoader {
 			}
 			page++;
 			proceededCount += loadedCount;
-			logger.debug("Loaded {} projects", proceededCount);
+			logger.info("Loaded {} projects", proceededCount);
 			sleep(delay);
 		};
 	}

@@ -55,6 +55,10 @@ public class DataService {
 		properties.put("size", Objects.toString(project.getSize(), null));
 		properties.put("forks", Objects.toString(project.getForks(), null));
 		properties.put("stars", Objects.toString(project.getWatchers(), null));
+		save(id, properties);
+	}
+
+	private void save(String id, Map<String, String> properties) {
 		List<Data> data = properties.entrySet().stream()
 				.filter(entry -> entry.getValue() != null)
 				.map(entry -> new Data(id, entry.getKey(), entry.getValue()))
@@ -73,14 +77,36 @@ public class DataService {
 
 	private void saveCommitStat(String id, GitCommitStatWeekly commitStatWeekly) {
 		Map<String, String> properties = new LinkedHashMap<>();
-		properties.put("commit.total", String.valueOf(commitStatWeekly.getTotalCommit()));
-		properties.put("commit.week_count", String.valueOf(commitStatWeekly.getWeekCount()));
-		properties.put("commit.weekly_average", String.valueOf(commitStatWeekly.getAvgCommitPerWeek()));
-		properties.put("commit.daily_average", String.valueOf(commitStatWeekly.getAvgCommitPerDay()));
-		List<Data> data = properties.entrySet().stream()
-				.filter(entry -> entry.getValue() != null)
-				.map(entry -> new Data(id, entry.getKey(), entry.getValue()))
-				.collect(Collectors.toList());
-		dataRepository.saveAll(data);
+		properties.put("commit.count", Objects.toString(commitStatWeekly.getTotalCommit()));
+		properties.put("commit.week_count", Objects.toString(commitStatWeekly.getWeekCount()));
+		properties.put("commit.daily_average", Objects.toString(commitStatWeekly.getAvgCommitPerDay(), null));
+		save(id, properties);
+	}
+
+	@Transactional
+	public void saveIssues(Map<String, GitTopIssues> issues) {
+		for (Map.Entry<String, GitTopIssues> issueEntry : issues.entrySet()) {
+			String id = issueEntry.getKey();
+			GitTopIssues topIssues = issueEntry.getValue();
+			saveIssues(id, topIssues);
+		}
+	}
+
+	private void saveIssues(String id, GitTopIssues topIssues) {
+		Map<String, String> properties = new LinkedHashMap<>();
+		properties.put("issue.count", Objects.toString(topIssues.getIssueCount()));
+		properties.put("issue.count.open", Objects.toString(topIssues.getOpenIssueCount()));
+		properties.put("issue.count.close", Objects.toString(topIssues.getCloseIssueCount()));
+		properties.put("issue.total_open_time", Objects.toString(topIssues.getTotalOpenTime()));
+		properties.put("issue.avg_open_time", Objects.toString(topIssues.getAvgOpenTime()));
+		Float openRatio = topIssues.getOpenRatio();
+		Float closeRatio = topIssues.getCloseRatio();
+		properties.put("issue.open_ratio", Objects.toString(openRatio, null));
+		properties.put("issue.close_ratio", Objects.toString(closeRatio, null));
+        openRatio = (openRatio != null) ? openRatio : 0;
+        closeRatio = (closeRatio != null) ? closeRatio : 0;
+		Float closeToOpenRatio = (openRatio != 0) ? closeRatio/openRatio : null;
+		properties.put("issue.close_to_open_ratio", Objects.toString(closeToOpenRatio, null));
+		save(id, properties);
 	}
 }
