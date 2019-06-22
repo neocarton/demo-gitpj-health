@@ -1,14 +1,16 @@
 package me.lam.huyen.channel;
 
-import me.lam.huyen.client.GitHubClient;
-import me.lam.huyen.config.ApplicationConfiguration;
+import me.lam.huyen.client.GitHubService;
 import me.lam.huyen.model.GitProject;
 import me.lam.huyen.model.GitProjectList;
 import me.lam.huyen.model.State;
+import me.lam.huyen.service.DataService;
 import me.lam.huyen.service.StateService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,63 +20,44 @@ public class ProjectLoader {
 
 	private Logger logger = LoggerFactory.getLogger(ProjectLoader.class);
 
-	@Autowired
-	private ApplicationConfiguration config;
+	@Value("${app.loader.project.page_size}")
+	private int pageSize;
+
+    @Value("${app.loader.project.max_result}")
+    private int maxResult;
 
 	@Autowired
-	private GitHubClient gitHubClient;
+	private GitHubService gitHubService;
+
+	@Autowired
+	private DataService dataService;
 
 	@Autowired
 	private StateService stateService;
 
-	@Autowired
-	private ProjectLoadedGateway projectLoadedGateway;
-
+    @Scheduled(fixedDelayString = "${app.loader.project.delay.inMilliSecond}")
 	public void fetchProjects() {
-		int delay = config.getDelay();
-		int pageSize = config.getPageSize();
-		int maxResult = config.getMaxResult();
 		// Start from beginning or last stopped
-		State state = stateService.get();
-		Integer page = state.getPage();
-		int proceededCount = state.getLoadedCount();
-		logger.debug("Start to fetch git projects from page {} and page-size {}", page, pageSize);
-		while (proceededCount < maxResult) {
-			int loadedCount = fetchProjectsAndPassOn(page, pageSize);
-			if (loadedCount == 0) {
-				break;
-			}
-			page++;
-			proceededCount += loadedCount;
-			logger.info("Loaded {} projects", proceededCount);
-			sleep(delay);
-		};
-	}
-
-	public int fetchProjectsAndPassOn(int page, int pageSize) {
-		// Load repositories
-		logger.debug("Get git projects from github.com at page {} with page-size {}", page, pageSize);
-		GitProjectList result = gitHubClient.searchRepositories("language:javascript", "stars", "desc", page, pageSize);
-		List<GitProject> projects = result.getItems();
-		if (projects == null || projects.isEmpty()) {
-			return 0;
+		State state = stateService.get(State.PROJECT_LOADER_ID);
+		int proceededCount = state.getTotalProceededCount();
+		if (proceededCount >= maxResult) {
+			return;
 		}
-		logger.debug("Got {} projects from github.com", projects.size());
-		// Push repositories to data pipeline
-		result.setPage(page);
-		projectLoadedGateway.send(result);
-		return projects.size();
-	}
-
-	private void sleep(int delay) {
-		try {
-			if (delay <=0 ) {
-				return;
-			}
-			Thread.sleep(delay);
-		}
-		catch (Exception exc) {
-			throw new RuntimeException(exc);
-		}
+		// Load projects
+		int page = state.getNextPage();
+        logger.debug("Fetch git projects from github.com at page {} with page-size {}", page, pageSize);
+        int gitPageNum = page + 1; // Github page start from 1
+        GitProjectList result = gitHubService.searchRepositories("language:javascript", "stars", "desc", gitPageNum, pageSize);
+        List<GitProject> projects = result.getItems();
+        if (projects == null || projects.isEmpty()) {
+			logger.debug("No new project was found");
+            return;
+        }
+        // Save data and state
+        int projectCount = projects.size();
+        state.setPage(page);
+        state.setLastProceededCount(projectCount);
+        state.setTotalProceededCount(proceededCount + projectCount);
+        dataService.saveProjects(projects, state);
 	}
 }

@@ -66,8 +66,12 @@ public class GitCommitStatWeekly {
 		this.totalCommit = totalCommit;
 	}
 
-	public Float getAvgCommitPerDay() {
+	public Float getDailyAverage() {
 		return (dayCount != 0) ? ((float) totalCommit / dayCount) : null;
+	}
+
+	public Float getWeeklyAverage() {
+		return (weekCount != 0) ? ((float) totalCommit / weekCount) : null;
 	}
 
 	@Override
@@ -77,7 +81,8 @@ public class GitCommitStatWeekly {
 				", dayCount=" + dayCount +
 				", weekCount=" + weekCount +
 				", totalCommit=" + totalCommit +
-				", avgCommitPerDay=" + getAvgCommitPerDay() +
+				", dailyAverage=" + getDailyAverage() +
+				", weeklyAverage=" + getWeeklyAverage() +
 				'}';
 	}
 }

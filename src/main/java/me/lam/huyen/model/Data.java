@@ -3,6 +3,8 @@ package me.lam.huyen.model;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.Lob;
+import java.sql.Date;
 import java.util.Objects;
 
 @Entity
@@ -14,8 +16,15 @@ public class Data {
 	@Column
 	private String key;
 
+	@Lob
 	@Column
 	private String value;
+
+	@Column(updatable = false)
+	private Date createdAt = new Date(System.currentTimeMillis());
+
+	@Column
+	private Date updatedAt = new Date(System.currentTimeMillis());
 
 	public Data() {
 	}
@@ -59,6 +68,22 @@ public class Data {
 		this.value = value;
 	}
 
+	public Date getCreatedAt() {
+		return createdAt;
+	}
+
+	public void setCreatedAt(Date createdAt) {
+		this.createdAt = createdAt;
+	}
+
+	public Date getUpdatedAt() {
+		return updatedAt;
+	}
+
+	public void setUpdatedAt(Date updatedAt) {
+		this.updatedAt = updatedAt;
+	}
+
 	@Override
 	public boolean equals(Object o) {
 		if (this == o) return true;
@@ -80,6 +105,8 @@ public class Data {
 				", objectId='" + objectId + '\'' +
 				", key='" + key + '\'' +
 				", value='" + value + '\'' +
+				", createdAt='" + createdAt + '\'' +
+				", updatedAt='" + updatedAt + '\'' +
 				'}';
 	}
 }

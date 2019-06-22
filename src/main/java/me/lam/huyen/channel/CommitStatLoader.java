@@ -1,64 +1,61 @@
 package me.lam.huyen.channel;
 
-import me.lam.huyen.client.GitHubClient;
+import me.lam.huyen.client.GitHubService;
+import me.lam.huyen.model.Data;
 import me.lam.huyen.model.GitCommitStat;
 import me.lam.huyen.model.GitCommitStatWeekly;
-import me.lam.huyen.model.GitProject;
-import me.lam.huyen.model.GitProjectList;
+import me.lam.huyen.service.DataService;
+import me.lam.huyen.service.StateService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class CommitStatLoader {
 
 	private Logger logger = LoggerFactory.getLogger(CommitStatLoader.class);
 
-	@Autowired
-	private GitHubClient gitHubClient;
+	@Value("${app.loader.commit.project_count}")
+	private int projectCount;
 
 	@Autowired
-	private CommitStatLoadedGateway commitStatLoadedGateway;
+	private GitHubService gitHubService;
+
+	@Autowired
+	private DataService dataService;
+
+	@Autowired
+	private StateService stateService;
 
 	/**
 	 * Handle event git projects loaded.
 	 */
-	@StreamListener(GitProjectChannel.PROJECT_LOADED)
-	public void handle(GitProjectList projectList) {
-		Map<String, GitCommitStatWeekly> result = fetchCommitStats(projectList);
-		commitStatLoadedGateway.send(result);
-	}
-
-	private Map<String, GitCommitStatWeekly> fetchCommitStats(GitProjectList projectList) {
-		List<GitProject> projects = projectList.getItems();
+	@Scheduled(initialDelayString = "${app.loader.commit.delay.inMilliSecond}",
+			fixedDelayString = "${app.loader.commit.delay.inMilliSecond}")
+	public void fetchCommitStats() {
+		List<Data> projects = dataService.findProjectsHaveNoCommit(projectCount);
 		if (projects == null || projects.isEmpty()) {
-			return Collections.emptyMap();
+			return;
 		}
-		Map<String, GitCommitStatWeekly> result = new HashMap<>();
-		for (GitProject project : projects) {
-			String id = project.getId();
-			String owner = project.getOwner().getLogin();
-			String repos = project.getName();
-			GitCommitStatWeekly commitStat = fetchCommitStat(owner, repos);
-			result.put(id, commitStat);
+		logger.debug("Fetching commit statistics for projects: {}",
+				projects.stream().map(Data::getValue).collect(Collectors.toList()));
+		for (Data project : projects) {
+			fetchCommitStatAndSave(project);
 		}
-		if (result == null) {
-			return Collections.emptyMap();
-		}
-		return result;
 	}
 
-	private GitCommitStatWeekly fetchCommitStat(String owner, String repos) {
-		logger.debug("Fetch commit statistic for project {}/{}", owner, repos);
-		List<GitCommitStat> result = gitHubClient.getCommitStatistics(owner, repos);
-		return new GitCommitStatWeekly(result);
+	private void fetchCommitStatAndSave(Data project) {
+		String id = project.getObjectId();
+		String repos = project.getValue();
+		// Load commit statistics
+		List<GitCommitStat> commitStatList = gitHubService.getCommitStatistics(repos);
+		GitCommitStatWeekly result = new GitCommitStatWeekly(commitStatList);
+		dataService.saveCommitStat(id, result);
 	}
-
 }

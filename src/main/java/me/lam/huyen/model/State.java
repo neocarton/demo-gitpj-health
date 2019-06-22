@@ -8,23 +8,28 @@ import java.util.Objects;
 @Entity
 public class State {
 
-	public static final Integer ID = 1;
+	public static final int PROJECT_LOADER_ID = 1;
 
 	@Id
-	private final Integer id = ID;
+	private Integer id;
+
+	@Column(name = "last_page")
+	private int page = -1; // Did not load any page yet
+
+	@Column(name = "last_offset")
+	private int offset = -1; // Did not load any page yet
 
 	@Column
-	private Integer page = 1;
+	private int lastProceededCount = 0;
 
-	@Column(name = "loadeds")
-	private Integer loadedCount = 0;
+	@Column
+	private int totalProceededCount = 0;
 
 	public State() {
 	}
 
-	public State(Integer page, Integer loadedCount) {
-		this.page = page;
-		this.loadedCount = loadedCount;
+	public State(Integer id) {
+		this.id = id;
 	}
 
 	public Integer getId() {
@@ -32,23 +37,47 @@ public class State {
 	}
 
 	public void setId(Integer id) {
-		// Do nothing
+		this.id = id;
 	}
 
-	public Integer getPage() {
+	public int getPage() {
 		return page;
 	}
 
-	public void setPage(Integer page) {
+	public void setPage(int page) {
 		this.page = page;
 	}
 
-	public Integer getLoadedCount() {
-		return loadedCount;
+	public int getNextPage() {
+		return page + 1;
 	}
 
-	public void setLoadedCount(Integer loadedCount) {
-		this.loadedCount = loadedCount;
+	public int getOffset() {
+		return offset;
+	}
+
+	public void setOffset(int offset) {
+		this.offset = offset;
+	}
+
+	public int getNextOffset() {
+		return offset + lastProceededCount + 1;
+	}
+
+	public int getLastProceededCount() {
+		return lastProceededCount;
+	}
+
+	public void setLastProceededCount(int lastProceededCount) {
+		this.lastProceededCount = lastProceededCount;
+	}
+
+	public int getTotalProceededCount() {
+		return totalProceededCount;
+	}
+
+	public void setTotalProceededCount(int totalProceededCount) {
+		this.totalProceededCount = totalProceededCount;
 	}
 
 	@Override
@@ -69,7 +98,9 @@ public class State {
 		return "State{" +
 				"id=" + id +
 				", page=" + page +
-				", loadedCount=" + loadedCount +
+				", offset=" + offset +
+				", lastProceededCount=" + lastProceededCount +
+				", totalProceededCount=" + totalProceededCount +
 				'}';
 	}
 }

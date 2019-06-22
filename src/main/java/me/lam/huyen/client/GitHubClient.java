@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.util.List;
 import java.util.Map;
 
-@FeignClient(name = "github", url = "${app.github.base_url}")
-public interface GitHubClient {
+@FeignClient(name = "github", url = "${app.github.base_url}", fallback = GitHubService.class)
+interface GitHubClient {
 
 	@RequestMapping(method = RequestMethod.GET, value = "/",
 			headers = {"Authorization=token ${app.github.access_token}"})
@@ -35,17 +35,17 @@ public interface GitHubClient {
 	 * Get repository commit statistics
 	 * https://developer.github.com/v3/repos/statistics/#get-contributors-list-with-additions-deletions-and-commit-counts
 	 */
-	@RequestMapping(method = RequestMethod.GET, path = "/repos/{owner}/{repo}/stats/commit_activity",
+	@RequestMapping(method = RequestMethod.GET, path = "/repos/{repo}/stats/commit_activity",
 			headers = {"Authorization=token ${app.github.access_token}", "Accept=application/vnd.github.v3+json"})
-	List<GitCommitStat> getCommitStatistics(@PathVariable("owner") String owner, @PathVariable("repo") String repo);
+	List<GitCommitStat> getCommitStatistics(@PathVariable("repo") String repo);
 
 	/**
 	 * Get repository issues
 	 * https://developer.github.com/v3/issues/#list-issues-for-a-repository
 	 */
-	@RequestMapping(method = RequestMethod.GET, path = "/repos/{owner}/{repo}/issues",
+	@RequestMapping(method = RequestMethod.GET, path = "/repos/{repo}/issues",
 			headers = {"Authorization=token ${app.github.access_token}", "Accept=application/vnd.github.v3+json"})
-	List<GitIssue> getIssues(@PathVariable("owner") String owner, @PathVariable("repo") String repo,
+	List<GitIssue> getIssues(@PathVariable("repo") String repo,
 							 @RequestParam(name = "sort", required = false) String sort,
 							 @RequestParam(name = "order", required = false) String order,
 							 @RequestParam(name = "page", required = false) Integer page,

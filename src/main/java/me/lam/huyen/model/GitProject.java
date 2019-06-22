@@ -13,6 +13,7 @@ public class GitProject {
 
 	private String name;
 
+	@JsonProperty("full_name")
 	private String fullName;
 
 	private GitUser owner;

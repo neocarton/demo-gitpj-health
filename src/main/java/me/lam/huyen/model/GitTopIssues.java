@@ -19,6 +19,7 @@ public class GitTopIssues {
 
 	public GitTopIssues(List<GitIssue> items) {
 		this.items = items;
+		init();
 	}
 
 	private void init() {

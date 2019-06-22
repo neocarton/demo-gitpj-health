@@ -1,60 +1,82 @@
 package me.lam.huyen.channel;
 
-import me.lam.huyen.client.GitHubClient;
-import me.lam.huyen.model.*;
+import me.lam.huyen.client.GitHubService;
+import me.lam.huyen.model.Data;
+import me.lam.huyen.model.GitIssue;
+import me.lam.huyen.model.GitTopIssues;
+import me.lam.huyen.service.DataService;
+import me.lam.huyen.service.StateService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class IssueLoader {
 
 	private Logger logger = LoggerFactory.getLogger(IssueLoader.class);
 
-	@Autowired
-	private GitHubClient gitHubClient;
+	@Value("${app.loader.issue.project_count}")
+	private int projectCount;
+
+	@Value("${app.loader.issue.page_size}")
+	private int pageSize;
+
+	@Value("${app.loader.issue.max_result}")
+	private int maxResult;
 
 	@Autowired
-	private IssueLoadedGateway issueLoadedGateway;
+	private GitHubService gitHubService;
+
+	@Autowired
+	private DataService dataService;
+
+	@Autowired
+	private StateService stateService;
 
 	/**
 	 * Handle event git projects loaded.
 	 */
-	@StreamListener(GitProjectChannel.PROJECT_LOADED)
-	public void handle(GitProjectList projectList) {
-		Map<String, GitTopIssues> result = fetchIssues(projectList);
-		issueLoadedGateway.send(result);
-	}
-
-	private Map<String, GitTopIssues> fetchIssues(GitProjectList projectList) {
-		List<GitProject> projects = projectList.getItems();
+	@Scheduled(initialDelayString = "${app.loader.issue.delay.inMilliSecond}",
+			fixedDelayString = "${app.loader.issue.delay.inMilliSecond}")
+	public void fetchIssues() {
+		List<Data> projects = dataService.findProjectsHaveNoIssue(projectCount);
 		if (projects == null || projects.isEmpty()) {
-			return Collections.emptyMap();
+			return;
 		}
-		Map<String, GitTopIssues> result = new HashMap<>();
-		for (GitProject project : projects) {
-			String id = project.getId();
-			String owner = project.getOwner().getLogin();
-			String repos = project.getName();
-			GitTopIssues issues = fetchIssues(owner, repos);
-			result.put(id, issues);
+		logger.debug("Fetching issues for projects: {}",
+				projects.stream().map(Data::getValue).collect(Collectors.toList()));
+		for (Data project : projects) {
+			fetchIssuesAndSave(project);
 		}
-		if (result == null) {
-			return Collections.emptyMap();
-		}
-		return result;
 	}
 
-	private GitTopIssues fetchIssues(String owner, String repos) {
-		logger.debug("Fetch issues for project {}/{}", owner, repos);
-		List<GitIssue> result = gitHubClient.getIssues(owner, repos, "created_at", "desc", 1, 100); // Get 100 issues
-		return new GitTopIssues(result);
+	private void fetchIssuesAndSave(Data project) {
+		String id = project.getObjectId();
+		int page = 1;
+		List<GitIssue> issues = new ArrayList<>(maxResult);
+		while (issues.size() < maxResult) {
+			String repos = project.getValue();
+			// Load commit statistics
+			List<GitIssue> curIssues = gitHubService.getIssues(repos, "created_at", "desc", page++, pageSize); // Get top 100 issues for evaluation
+			if (curIssues == null || curIssues.isEmpty()) {
+				break;
+			}
+			// Add to result lists
+			for (GitIssue issue : curIssues) {
+				if (issue.getPullRequest() == null) {
+					issues.add(issue);
+				}
+			}
+		}
+		// Save data and state
+		GitTopIssues topIssues = new GitTopIssues(issues);
+		dataService.saveIssues(id, topIssues);
 	}
 }

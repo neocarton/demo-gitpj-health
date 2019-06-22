@@ -2,6 +2,7 @@ package me.lam.huyen.service;
 
 import me.lam.huyen.model.*;
 import me.lam.huyen.repository.DataRepository;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,28 +28,22 @@ public class DataService {
 	@Autowired
 	private DataRepository dataRepository;
 
-	@Autowired
-	private StateService stateService;
+    @Autowired
+    private StateService stateService;
 
 	@Transactional
-	public void saveProjects(GitProjectList projectList) {
-		List<GitProject> projects = projectList.getItems();
-		if (projects == null || projects.isEmpty()) {
-			return;
-		}
-		int page = projectList.getPage();
-		logger.debug("Saving '{}' git projects loaded from page '{}'", projects.size(), page);
+	public void saveProjects(List<GitProject> projects, State state) {
 		for (GitProject project : projects) {
 			saveProject(project);
 		}
-		stateService.save(page, projects.size());
-		logger.debug("Successfully saved '{}' git projects loaded from page '{}'", projects.size(), page);
+		stateService.save(state);
 	}
 
 	private void saveProject(GitProject project) {
 		String id = project.getId();
 		Map<String, String> properties = new LinkedHashMap<>();
 		properties.put("name", project.getName());
+		properties.put("full_name", project.getFullName());
 		properties.put("url", project.getUrl());
 		GitUser owner = project.getOwner();
 		properties.put("owner", (owner != null) ? owner.getLogin() : null);
@@ -66,47 +61,61 @@ public class DataService {
 		dataRepository.saveAll(data);
 	}
 
-	@Transactional
-	public void saveCommitStats(Map<String, GitCommitStatWeekly> commitStats) {
-		for (Map.Entry<String, GitCommitStatWeekly> commitStatWeeklyEntry : commitStats.entrySet()) {
-			String id = commitStatWeeklyEntry.getKey();
-			GitCommitStatWeekly commitStatWeekly = commitStatWeeklyEntry.getValue();
-			saveCommitStat(id, commitStatWeekly);
-		}
+	public List<Data> findProjectsHaveNoCommit(int limit) {
+		return dataRepository.findProjectsWithNoKey("commit.count", limit);
 	}
 
-	private void saveCommitStat(String id, GitCommitStatWeekly commitStatWeekly) {
+	public List<Data> findProjectsHaveNoIssue(int limit) {
+		return dataRepository.findProjectsWithNoKey("issue.count", limit);
+	}
+
+	@Transactional
+	public void saveCommitStat(String id, GitCommitStatWeekly commitStatWeekly) {
 		Map<String, String> properties = new LinkedHashMap<>();
-		properties.put("commit.count", Objects.toString(commitStatWeekly.getTotalCommit()));
-		properties.put("commit.week_count", Objects.toString(commitStatWeekly.getWeekCount()));
-		properties.put("commit.daily_average", Objects.toString(commitStatWeekly.getAvgCommitPerDay(), null));
+		int commitCount = commitStatWeekly.getTotalCommit();
+		properties.put("commit.count", Objects.toString(commitCount));
+		if (commitCount > 0) {
+			properties.put("commit.week_count", Objects.toString(commitStatWeekly.getWeekCount()));
+			properties.put("commit.daily_average", Objects.toString(commitStatWeekly.getDailyAverage(), null));
+			properties.put("commit.weekly_average", Objects.toString(commitStatWeekly.getWeeklyAverage(), null));
+		}
 		save(id, properties);
 	}
 
 	@Transactional
-	public void saveIssues(Map<String, GitTopIssues> issues) {
-		for (Map.Entry<String, GitTopIssues> issueEntry : issues.entrySet()) {
-			String id = issueEntry.getKey();
-			GitTopIssues topIssues = issueEntry.getValue();
-			saveIssues(id, topIssues);
-		}
+	public void saveCommitStatError(String id, Exception error) {
+		String data = ExceptionUtils.getStackTrace(error);
+		Map<String, String> properties = new LinkedHashMap<>();
+		properties.put("commit.last_error", data);
+		save(id, properties);
 	}
 
-	private void saveIssues(String id, GitTopIssues topIssues) {
+	@Transactional
+	public void saveIssues(String id, GitTopIssues topIssues) {
 		Map<String, String> properties = new LinkedHashMap<>();
-		properties.put("issue.count", Objects.toString(topIssues.getIssueCount()));
-		properties.put("issue.count.open", Objects.toString(topIssues.getOpenIssueCount()));
-		properties.put("issue.count.close", Objects.toString(topIssues.getCloseIssueCount()));
-		properties.put("issue.total_open_time", Objects.toString(topIssues.getTotalOpenTime()));
-		properties.put("issue.avg_open_time", Objects.toString(topIssues.getAvgOpenTime()));
-		Float openRatio = topIssues.getOpenRatio();
-		Float closeRatio = topIssues.getCloseRatio();
-		properties.put("issue.open_ratio", Objects.toString(openRatio, null));
-		properties.put("issue.close_ratio", Objects.toString(closeRatio, null));
-        openRatio = (openRatio != null) ? openRatio : 0;
-        closeRatio = (closeRatio != null) ? closeRatio : 0;
-		Float closeToOpenRatio = (openRatio != 0) ? closeRatio/openRatio : null;
-		properties.put("issue.close_to_open_ratio", Objects.toString(closeToOpenRatio, null));
+		int issueCount = topIssues.getIssueCount();
+		properties.put("issue.count", Objects.toString(issueCount));
+		if (issueCount > 0) {
+			properties.put("issue.count.open", Objects.toString(topIssues.getOpenIssueCount()));
+			properties.put("issue.count.close", Objects.toString(topIssues.getCloseIssueCount()));
+			properties.put("issue.total_open_time", Objects.toString(topIssues.getTotalOpenTime()));
+			properties.put("issue.avg_open_time", Objects.toString(topIssues.getAvgOpenTime()));
+			Float openRatio = topIssues.getOpenRatio();
+			Float closeRatio = topIssues.getCloseRatio();
+			properties.put("issue.open_ratio", Objects.toString(openRatio, null));
+			properties.put("issue.close_ratio", Objects.toString(closeRatio, null));
+			openRatio = (openRatio != null) ? openRatio : 0;
+			closeRatio = (closeRatio != null) ? closeRatio : 0;
+			Float closeToOpenRatio = (openRatio != 0) ? closeRatio / openRatio : null;
+			properties.put("issue.close_to_open_ratio", Objects.toString(closeToOpenRatio, null));
+		}
+		save(id, properties);
+	}
+
+	@Transactional
+	public void saveIssuesError(String id, Exception error) {
+		Map<String, String> properties = new LinkedHashMap<>();
+		properties.put("issue.last_error", ExceptionUtils.getStackTrace(error));
 		save(id, properties);
 	}
 }

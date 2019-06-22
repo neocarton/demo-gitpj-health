@@ -20,18 +20,12 @@ public class StateService {
 	@Autowired
 	private StateRepository stateRepository;
 
-	/**
-	 * Save project state = 0.
-	 */
 	@Transactional
-	public void save(int page, int pageSize) {
-		State state = get();
-		state.setPage(page);
-		state.setLoadedCount(state.getLoadedCount() + pageSize);
+	public void save(State state) {
 		stateRepository.save(state);
 	}
 
-	public State get() {
-		return stateRepository.findById(State.ID).orElse(new State());
+	public State get(int id) {
+		return stateRepository.findById(id).orElse(new State(id));
 	}
 }

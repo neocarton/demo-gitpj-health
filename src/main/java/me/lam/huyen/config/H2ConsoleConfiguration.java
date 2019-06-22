@@ -17,7 +17,7 @@ public class H2ConsoleConfiguration {
 
     @Bean(initMethod = "start", destroyMethod="stop")
     public Server h2WebConsonleServer () throws SQLException {
-        logger.debug("Starting H2 console: http://localhost:{}", h2PortNumber);
+        logger.info("Starting H2 console: http://localhost:{}", h2PortNumber);
         return Server.createWebServer("-web","-webAllowOthers","-webDaemon","-webPort", String.valueOf(h2PortNumber));
     }
 }
