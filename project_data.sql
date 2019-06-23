@@ -27,6 +27,20 @@ CREATE INDEX IF NOT EXISTS data_created_at_idx ON data (created_at);
 
 CREATE INDEX IF NOT EXISTS data_updated_at_idx ON data (updated_at);
 
+CREATE VIEW IF NOT EXISTS progress AS (
+    SELECT projects, commits, issues, pull_requests, contributors
+    FROM (SELECT count(*) AS projects FROM data
+        WHERE key = 'full_name')
+    JOIN (SELECT count(*) AS commits FROM data
+        WHERE key = 'full_name' AND object_id NOT IN (SELECT DISTINCT object_id FROM data WHERE key = 'commit.count'))
+    JOIN (SELECT count(*) AS pull_requests FROM data
+        WHERE key = 'full_name' AND object_id NOT IN (SELECT DISTINCT object_id FROM data WHERE key = 'pull_request.count'))
+    JOIN (SELECT count(*) AS issues FROM data
+        WHERE key = 'full_name' AND object_id NOT IN (SELECT DISTINCT object_id FROM data WHERE key = 'issue.count'))
+    JOIN (SELECT count(*) AS contributors FROM data
+        WHERE key = 'full_name' AND object_id NOT IN (SELECT DISTINCT object_id FROM data WHERE key = 'contributor.count'))
+);
+
 CREATE VIEW IF NOT EXISTS repos_metric AS (
     SELECT n.object_id, owner, repos, IFNULL(forks, 0) AS forks, IFNULL(stars, 0) AS stars,
         IFNULL(commits_per_day, 0) as commits_per_day,
