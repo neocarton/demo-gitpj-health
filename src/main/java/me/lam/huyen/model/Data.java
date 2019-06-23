@@ -1,10 +1,13 @@
 package me.lam.huyen.model;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import me.lam.huyen.config.ZonedDateTimeDeserializer;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Lob;
-import java.sql.Date;
+import java.time.ZonedDateTime;
 import java.util.Objects;
 
 @Entity
@@ -20,11 +23,13 @@ public class Data {
 	@Column
 	private String value;
 
-	@Column(updatable = false)
-	private Date createdAt = new Date(System.currentTimeMillis());
+    @JsonDeserialize(using = ZonedDateTimeDeserializer.class)
+    @Column(updatable = false)
+	private ZonedDateTime createdAt = ZonedDateTime.now();
 
-	@Column
-	private Date updatedAt = new Date(System.currentTimeMillis());
+    @JsonDeserialize(using = ZonedDateTimeDeserializer.class)
+    @Column
+	private ZonedDateTime updatedAt = ZonedDateTime.now();
 
 	public Data() {
 	}
@@ -68,19 +73,19 @@ public class Data {
 		this.value = value;
 	}
 
-	public Date getCreatedAt() {
+	public ZonedDateTime getCreatedAt() {
 		return createdAt;
 	}
 
-	public void setCreatedAt(Date createdAt) {
+	public void setCreatedAt(ZonedDateTime createdAt) {
 		this.createdAt = createdAt;
 	}
 
-	public Date getUpdatedAt() {
+	public ZonedDateTime getUpdatedAt() {
 		return updatedAt;
 	}
 
-	public void setUpdatedAt(Date updatedAt) {
+	public void setUpdatedAt(ZonedDateTime updatedAt) {
 		this.updatedAt = updatedAt;
 	}
 

@@ -1,11 +1,12 @@
 package me.lam.huyen.channel;
 
-import me.lam.huyen.client.GitHubService;
+import me.lam.huyen.client.GitHubClient;
 import me.lam.huyen.model.Data;
 import me.lam.huyen.model.GitCommitStat;
 import me.lam.huyen.model.GitCommitStatWeekly;
 import me.lam.huyen.service.DataService;
 import me.lam.huyen.service.StateService;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +26,7 @@ public class CommitStatLoader {
 	private int projectCount;
 
 	@Autowired
-	private GitHubService gitHubService;
+	private GitHubClient gitHubClient;
 
 	@Autowired
 	private DataService dataService;
@@ -53,9 +54,17 @@ public class CommitStatLoader {
 	private void fetchCommitStatAndSave(Data project) {
 		String id = project.getObjectId();
 		String repos = project.getValue();
-		// Load commit statistics
-		List<GitCommitStat> commitStatList = gitHubService.getCommitStatistics(repos);
-		GitCommitStatWeekly result = new GitCommitStatWeekly(commitStatList);
-		dataService.saveCommitStat(id, result);
+		try {
+			// Load commit statistics
+			List<GitCommitStat> commitStatList = gitHubClient.getCommitStatistics(repos);
+			GitCommitStatWeekly result = new GitCommitStatWeekly(commitStatList);
+			dataService.saveCommitStat(id, result);
+		}
+		catch (Exception exc) {
+			logger.warn("Failed to fetch commit statistics for project '{}': {}", repos,
+					ExceptionUtils.getRootCauseMessage(exc));
+			logger.trace("Exception", exc);
+			dataService.saveCommitStatError(id, exc);
+		}
 	}
 }

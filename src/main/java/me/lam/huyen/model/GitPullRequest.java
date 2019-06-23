@@ -1,25 +1,37 @@
 package me.lam.huyen.model;
 
-import java.sql.Date;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import me.lam.huyen.config.ZonedDateTimeDeserializer;
+
+import java.time.ZonedDateTime;
 
 public class GitPullRequest extends GitIssue {
 
-    private Date mergedAt;
+    @JsonProperty("merged_at")
+    @JsonDeserialize(using = ZonedDateTimeDeserializer.class)
+    private ZonedDateTime mergedAt;
 
-    public Date getMergedAt() {
+    public ZonedDateTime getMergedAt() {
         return mergedAt;
     }
 
-    public void setMergedAt(Date mergedAt) {
+    public void setMergedAt(ZonedDateTime mergedAt) {
         this.mergedAt = mergedAt;
+    }
+
+    public boolean isOpen() {
+        return (mergedAt == null);
     }
 
     // second
     public long getOpenTime() {
-        Date createdAt = getCreatedAt();
-        long createdTime = (createdAt != null) ? createdAt.getTime() : 0;
-        long closeTime = (mergedAt != null) ? mergedAt.getTime() : System.currentTimeMillis();
-        return (closeTime - createdTime) / 1000;
+        return getDuration(getCreatedAt(), (mergedAt != null) ? mergedAt : ZonedDateTime.now(), 0);
+    }
+
+    // second
+    public long getCloseTime() {
+        return getDuration(getCreatedAt(), mergedAt, 0);
     }
 
     @Override
@@ -40,7 +52,6 @@ public class GitPullRequest extends GitIssue {
                 ", updatedAt=" + getUpdatedAt() +
                 ", mergedAt=" + mergedAt +
                 ", pullRequest=" + getPullRequest() +
-                ", openTime=" + getOpenTime() +
                 '}';
     }
 }

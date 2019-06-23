@@ -1,11 +1,12 @@
 package me.lam.huyen.channel;
 
-import me.lam.huyen.client.GitHubService;
+import me.lam.huyen.client.GitHubClient;
 import me.lam.huyen.model.Data;
 import me.lam.huyen.model.GitPullRequest;
 import me.lam.huyen.model.GitTopIssues;
 import me.lam.huyen.service.DataService;
 import me.lam.huyen.service.StateService;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +33,7 @@ public class PullRequestLoader {
 	private int maxResult;
 
 	@Autowired
-	private GitHubService gitHubService;
+	private GitHubClient gitHubClient;
 
 	@Autowired
 	private DataService dataService;
@@ -60,23 +61,31 @@ public class PullRequestLoader {
 	private void fetchPullRequestsAndSave(Data project) {
 		String id = project.getObjectId();
 		String repos = project.getValue();
-		int page = 1;
-		List<GitPullRequest> pullRequests = new ArrayList<>(maxResult);
-		while (pullRequests.size() < maxResult) {
-			// Load commit statistics
-			List<GitPullRequest> curPullRequests = gitHubService.getPullRequests(repos, "created", "desc", page++, pageSize);
-			if (curPullRequests == null || curPullRequests.isEmpty()) {
-				break;
-			}
-			// Add to result lists
-			for (GitPullRequest pullRequest : curPullRequests) {
-				if (pullRequest.getPullRequest() == null) {
-					pullRequests.add(pullRequest);
+		try {
+			int page = 1;
+			List<GitPullRequest> pullRequests = new ArrayList<>(maxResult);
+			while (pullRequests.size() < maxResult) {
+				// Load commit statistics
+				List<GitPullRequest> curPullRequests = gitHubClient.getPullRequests(repos, "all", "created", "desc", page++, pageSize);
+				if (curPullRequests == null || curPullRequests.isEmpty()) {
+					break;
+				}
+				// Add to result lists
+				for (GitPullRequest pullRequest : curPullRequests) {
+					if (pullRequest.getPullRequest() == null) {
+						pullRequests.add(pullRequest);
+					}
 				}
 			}
+			// Save data and state
+			GitTopIssues<GitPullRequest> topPullRequests = new GitTopIssues<>(pullRequests);
+			dataService.savePullRequests(id, topPullRequests);
 		}
-		// Save data and state
-		GitTopIssues<GitPullRequest> topPullRequests = new GitTopIssues<>(pullRequests);
-		dataService.savePullRequests(id, topPullRequests);
+		catch (Exception exc) {
+			logger.warn("Failed to fetch pull requests for project '{}': {}", repos,
+					ExceptionUtils.getRootCauseMessage(exc));
+			logger.trace("Exception", exc);
+			dataService.savePullRequestsError(id, exc);
+		}
 	}
 }

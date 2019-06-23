@@ -84,17 +84,21 @@ public class DataService {
 		properties.put("commit.count", Objects.toString(commitCount));
 		if (commitCount > 0) {
 			properties.put("commit.week_count", Objects.toString(commitStatWeekly.getWeekCount()));
-			properties.put("commit.daily_average", Objects.toString(commitStatWeekly.getDailyAverage(), null));
-			properties.put("commit.weekly_average", Objects.toString(commitStatWeekly.getWeeklyAverage(), null));
+			properties.put("commit.daily_avg", Objects.toString(commitStatWeekly.getDailyAverage(), null));
+			properties.put("commit.weekly_avg", Objects.toString(commitStatWeekly.getWeeklyAverage(), null));
 		}
 		save(id, properties);
 	}
 
 	@Transactional
 	public void saveCommitStatError(String id, Exception error) {
-		String data = ExceptionUtils.getStackTrace(error);
+		saveError(id, "commit", error);
+	}
+
+	private void saveError(String id, String keyPrefix, Exception error) {
+		String data = ExceptionUtils.getRootCauseMessage(error);
 		Map<String, String> properties = new LinkedHashMap<>();
-		properties.put("commit.last_error", data);
+		properties.put(keyPrefix + ".last_error", data);
 		save(id, properties);
 	}
 
@@ -108,6 +112,7 @@ public class DataService {
 		if (issueCount > 0) {
 			properties.put("issue.total_open_time_s", Objects.toString(topIssues.getTotalOpenTime()));
 			properties.put("issue.avg_open_time_s", Objects.toString(topIssues.getAvgOpenTime()));
+			properties.put("issue.avg_close_time_s", Objects.toString(topIssues.getAvgCloseTime()));
 			Float openRatio = topIssues.getOpenRatio();
 			Float closeRatio = topIssues.getCloseRatio();
 			properties.put("issue.open_ratio", Objects.toString(openRatio, null));
@@ -122,9 +127,7 @@ public class DataService {
 
 	@Transactional
 	public void saveIssuesError(String id, Exception error) {
-		Map<String, String> properties = new LinkedHashMap<>();
-		properties.put("issue.last_error", ExceptionUtils.getStackTrace(error));
-		save(id, properties);
+		saveError(id, "issue", error);
 	}
 
 	@Transactional
@@ -135,11 +138,17 @@ public class DataService {
 		properties.put("pull_request.count.open", Objects.toString(topIssues.getOpenIssueCount()));
 		if (issueCount > 0) {
 			properties.put("pull_request.total_open_time_s", Objects.toString(topIssues.getTotalOpenTime()));
-			properties.put("pull_request.avg_merge_time_s", Objects.toString(topIssues.getAvgOpenTime()));
+			properties.put("pull_request.avg_open_time_s", Objects.toString(topIssues.getAvgOpenTime()));
+			properties.put("pull_request.avg_merge_time_s", Objects.toString(topIssues.getAvgCloseTime()));
 			properties.put("pull_request.comments", Objects.toString(topIssues.getTotalComments()));
 			properties.put("pull_request.avg_comments", Objects.toString(topIssues.getAvgComments()));
 		}
 		save(id, properties);
+	}
+
+	@Transactional
+	public void savePullRequestsError(String id, Exception error) {
+		saveError(id, "pull_request", error);
 	}
 
 	@Transactional
@@ -152,5 +161,14 @@ public class DataService {
 			properties.put("contributor.avg_commits", Objects.toString(contributorStatList.getAvgCommits()));
 		}
 		save(id, properties);
+	}
+
+	@Transactional
+	public void saveContributorStatsError(String id, Exception error) {
+		saveError(id, "contributor", error);
+	}
+
+	public List<ReposHealthScore> getReport() {
+		return dataRepository.getReport();
 	}
 }

@@ -1,8 +1,11 @@
 package me.lam.huyen.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import me.lam.huyen.config.ZonedDateTimeDeserializer;
 
-import java.sql.Date;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Objects;
 
@@ -29,11 +32,17 @@ public class GitIssue {
 
 	private int comments = 0;
 
-	private Date closedAt;
+	@JsonProperty("closed_at")
+    @JsonDeserialize(using = ZonedDateTimeDeserializer.class)
+	private ZonedDateTime closedAt;
 
-	private Date createdAt;
+	@JsonProperty("created_at")
+    @JsonDeserialize(using = ZonedDateTimeDeserializer.class)
+	private ZonedDateTime createdAt;
 
-	private Date updatedAt;
+	@JsonProperty("updated_at")
+    @JsonDeserialize(using = ZonedDateTimeDeserializer.class)
+	private ZonedDateTime updatedAt;
 
 	private GitPullRequest pullRequest;
 
@@ -117,27 +126,27 @@ public class GitIssue {
 		this.comments = (comments != null) ? comments : 0;
 	}
 
-	public Date getClosedAt() {
+	public ZonedDateTime getClosedAt() {
 		return closedAt;
 	}
 
-	public void setClosedAt(Date closedAt) {
+	public void setClosedAt(ZonedDateTime closedAt) {
 		this.closedAt = closedAt;
 	}
 
-	public Date getCreatedAt() {
+	public ZonedDateTime getCreatedAt() {
 		return createdAt;
 	}
 
-	public void setCreatedAt(Date createdAt) {
+	public void setCreatedAt(ZonedDateTime createdAt) {
 		this.createdAt = createdAt;
 	}
 
-	public Date getUpdatedAt() {
+	public ZonedDateTime getUpdatedAt() {
 		return updatedAt;
 	}
 
-	public void setUpdatedAt(Date updatedAt) {
+	public void setUpdatedAt(ZonedDateTime updatedAt) {
 		this.updatedAt = updatedAt;
 	}
 
@@ -149,11 +158,26 @@ public class GitIssue {
 		this.pullRequest = pullRequest;
 	}
 
+	public boolean isOpen() {
+		return (createdAt == null);
+	}
+
 	// second
 	public long getOpenTime() {
-		long createdTime = (createdAt != null) ? createdAt.getTime() : 0;
-		long closeTime = (closedAt != null) ? closedAt.getTime() : System.currentTimeMillis();
-		return (closeTime - createdTime) / 1000;
+		return getDuration(createdAt, (closedAt != null) ? closedAt : ZonedDateTime.now(), 0);
+	}
+
+	// second
+	public long getCloseTime() {
+		return getDuration(createdAt, closedAt, 0);
+	}
+
+	// second
+	protected long getDuration(ZonedDateTime from, ZonedDateTime to, long fallbackValue) {
+		if (to == null) {
+			return fallbackValue;
+		}
+		return ChronoUnit.SECONDS.between(from, to);
 	}
 
 	@Override

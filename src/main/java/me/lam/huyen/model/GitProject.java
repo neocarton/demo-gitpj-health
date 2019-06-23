@@ -1,8 +1,10 @@
 package me.lam.huyen.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import me.lam.huyen.config.ZonedDateTimeDeserializer;
 
-import java.sql.Date;
+import java.time.ZonedDateTime;
 import java.util.Objects;
 
 public class GitProject {
@@ -40,9 +42,13 @@ public class GitProject {
 
 	private Boolean disabled;
 
-	private Date createdAt;
+	@JsonProperty("created_at")
+    @JsonDeserialize(using = ZonedDateTimeDeserializer.class)
+	private ZonedDateTime createdAt;
 
-	private Date pushedAt;
+	@JsonProperty("pushed_at")
+    @JsonDeserialize(using = ZonedDateTimeDeserializer.class)
+	private ZonedDateTime pushedAt;
 
 	public String getId() {
 		return id;
@@ -156,19 +162,19 @@ public class GitProject {
 		this.disabled = disabled;
 	}
 
-	public Date getCreatedAt() {
+	public ZonedDateTime getCreatedAt() {
 		return createdAt;
 	}
 
-	public void setCreatedAt(Date createdAt) {
+	public void setCreatedAt(ZonedDateTime createdAt) {
 		this.createdAt = createdAt;
 	}
 
-	public Date getPushedAt() {
+	public ZonedDateTime getPushedAt() {
 		return pushedAt;
 	}
 
-	public void setPushedAt(Date pushedAt) {
+	public void setPushedAt(ZonedDateTime pushedAt) {
 		this.pushedAt = pushedAt;
 	}
 

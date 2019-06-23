@@ -10,8 +10,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.util.List;
 import java.util.Map;
 
-@FeignClient(name = "github", url = "${app.github.base_url}", fallback = GitHubService.class)
-interface GitHubClient {
+@FeignClient(name = "github", url = "${app.github.base_url}")
+public interface GitHubClient {
 
 	@RequestMapping(method = RequestMethod.GET, value = "/",
 			headers = {"Authorization=token ${app.github.access_token}"})
@@ -43,7 +43,7 @@ interface GitHubClient {
 	 */
 	@RequestMapping(method = RequestMethod.GET, path = "/repos/{repo}/issues",
 			headers = {"Authorization=token ${app.github.access_token}", "Accept=application/vnd.github.v3+json"})
-	List<GitIssue> getIssues(@PathVariable("repo") String repo,
+	List<GitIssue> getIssues(@PathVariable("repo") String repo, @RequestParam(name = "state") String state,
 							 @RequestParam(name = "sort", required = false) String sort,
 							 @RequestParam(name = "order", required = false) String order,
 							 @RequestParam(name = "page", required = false) Integer page,
@@ -55,7 +55,7 @@ interface GitHubClient {
 	 */
 	@RequestMapping(method = RequestMethod.GET, path = "/repos/{repo}/pulls",
 			headers = {"Authorization=token ${app.github.access_token}", "Accept=application/vnd.github.v3+json"})
-	List<GitPullRequest> getPullRequests(@PathVariable("repo") String repo,
+	List<GitPullRequest> getPullRequests(@PathVariable("repo") String repo, @RequestParam(name = "state") String state,
 										 @RequestParam(name = "sort", required = false) String sort,
 										 @RequestParam(name = "order", required = false) String order,
 										 @RequestParam(name = "page", required = false) Integer page,

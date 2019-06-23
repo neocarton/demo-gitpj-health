@@ -10,6 +10,8 @@ public class GitTopIssues<T extends GitIssue> {
 
 	private long totalOpenTime = 0; // second
 
+	private long totalCloseTime = 0; // second
+
 	private int openIssueCount = 0;
 
 	private int closeIssueCount = 0;
@@ -31,7 +33,8 @@ public class GitTopIssues<T extends GitIssue> {
 		for (GitIssue item : items) {
 			issueCount++;
 			totalOpenTime += item.getOpenTime();
-			boolean open = "open".equals(item.getState());
+			totalCloseTime += item.getCloseTime();
+			boolean open = item.isOpen();
 			openIssueCount += (open) ? 1 : 0;
 			closeIssueCount += (!open) ? 1 : 0;
 			totalComments += item.getComments();
@@ -63,6 +66,14 @@ public class GitTopIssues<T extends GitIssue> {
 		this.totalOpenTime = totalOpenTime;
 	}
 
+	public long getTotalCloseTime() {
+		return totalCloseTime;
+	}
+
+	public void setTotalCloseTime(long totalCloseTime) {
+		this.totalCloseTime = totalCloseTime;
+	}
+
 	public int getOpenIssueCount() {
 		return openIssueCount;
 	}
@@ -92,6 +103,11 @@ public class GitTopIssues<T extends GitIssue> {
 		return (issueCount != 0) ? (totalOpenTime / issueCount) : null;
 	}
 
+	// seconds
+	public Long getAvgCloseTime() {
+		return (issueCount != 0) ? (totalCloseTime / issueCount) : null;
+	}
+
 	public Float getOpenRatio() {
 		return (issueCount != 0) ? ((float) openIssueCount / issueCount) : null;
 	}
@@ -110,6 +126,7 @@ public class GitTopIssues<T extends GitIssue> {
 				"items=" + items +
 				", issueCount=" + issueCount +
 				", totalOpenTime=" + totalOpenTime +
+				", totalCloseTime=" + totalCloseTime +
 				", openIssueCount=" + openIssueCount +
 				", closeIssueCount=" + closeIssueCount +
 				", avgOpenTime=" + getAvgOpenTime() +

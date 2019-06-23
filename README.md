@@ -9,3 +9,9 @@ app.github.access_token=7066ec5c7baf66cdad7057c474ac4cf0e00c0bd1
 
 ### Execute
 ./run
+
+### Improvement
+
+Use event source -> better retry
+Apply mutiple processing -> improve performance
+Store fact -> customerizable

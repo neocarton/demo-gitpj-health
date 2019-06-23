@@ -1,11 +1,12 @@
 package me.lam.huyen.channel;
 
-import me.lam.huyen.client.GitHubService;
+import me.lam.huyen.client.GitHubClient;
 import me.lam.huyen.model.Data;
 import me.lam.huyen.model.GitContributorStat;
 import me.lam.huyen.model.GitContributorStatList;
 import me.lam.huyen.service.DataService;
 import me.lam.huyen.service.StateService;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +26,7 @@ public class ContributorStatLoader {
 	private int projectCount;
 
 	@Autowired
-	private GitHubService gitHubService;
+	private GitHubClient gitHubClient;
 
 	@Autowired
 	private DataService dataService;
@@ -53,13 +54,21 @@ public class ContributorStatLoader {
 	private void fetchContributorsAndSave(Data project) {
 		String id = project.getObjectId();
 		String repos = project.getValue();
-		// Load commit statistics
-		List<GitContributorStat> contributors = gitHubService.getContributorStatistics(repos);
-		if (contributors == null || contributors.isEmpty()) {
-			return;
-		}
-		// Save data and state
-		GitContributorStatList result = new GitContributorStatList(contributors);
-		dataService.saveContributorStats(id, result);
+		try {
+            // Load commit statistics
+            List<GitContributorStat> contributors = gitHubClient.getContributorStatistics(repos);
+            if (contributors == null || contributors.isEmpty()) {
+                return;
+            }
+            // Save data and state
+            GitContributorStatList result = new GitContributorStatList(contributors);
+            dataService.saveContributorStats(id, result);
+        }
+		catch (Exception exc) {
+			logger.warn("Failed to fetch contributor statistics for project '{}': {}", repos,
+					ExceptionUtils.getRootCauseMessage(exc));
+			logger.trace("Exception", exc);
+		    dataService.saveContributorStatsError(id, exc);
+        }
 	}
 }
