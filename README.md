@@ -25,7 +25,9 @@ java -jar ./build/libs/ProjectHealth-0.0.1-SNAPSHOT.jar
 
 ### Get results
 
-Open browser with URL http://localhost:8082
+There is a sample result with 100 repositories in [repos_health_scores.csv](repos_health_scores.csv)
+
+In order to access repository health scores, open browser with URL http://localhost:8082
 
 Use following information to login
 ```
@@ -64,7 +66,7 @@ There are some obvious issues
 
 * The implementation seem a little slow
 * Data is not optimised properly, query time takes a little too long
-* Final result does not seem to be correct
+* Final result is not quite correct, due to data parsing bugs, wrong data source, evaluation formulas need to be reconsidered
 
 ### Improvements
 
